@@ -102,7 +102,7 @@ if uploaded_files:
         file_ext = os.path.splitext(uploaded_file.name)[-1].lower()
 
         try:
-            # Read the file based on its extension
+            # Step 1: Read the file based on its extension
             if file_ext == '.csv':
                 df = pd.read_csv(uploaded_file)
             elif file_ext == '.xlsx':
@@ -111,15 +111,15 @@ if uploaded_files:
                 st.error(f'Unsupported file format: {file_ext}')
                 continue
 
-            # Display file info
+            # Step 2: Display file info
             st.write(f"**File Name:** {uploaded_file.name}")
             st.write(f"**File Size:** {uploaded_file.size / 1024:.2f} KB")
 
-            # Show a preview of the DataFrame
+            # Step 3: Show a preview of the DataFrame
             st.subheader("Preview of the DataFrame")
             st.dataframe(df.head())
 
-            # Data cleaning options
+            # Step 4: Data cleaning options
             st.subheader("Data Cleaning Options")
             if st.checkbox(f"Clean Data for {uploaded_file.name}"):
                 col1, col2 = st.columns(2)
@@ -135,12 +135,12 @@ if uploaded_files:
                         df[numeric_cols] = df[numeric_cols].apply(lambda col: col.fillna(col.mean()))
                         st.success("✅ Missing Values Filled")
 
-            # Select columns to keep
+            # Step 5: Select columns to keep
             st.subheader("Select Columns to Keep")
             columns = st.multiselect(f"Choose Columns for {uploaded_file.name}", df.columns, default=df.columns)
             df = df[columns]
 
-            # Data visualization
+            # Step 6: Data visualization
             st.subheader("📊 Data Visualization")
             if st.checkbox(f"Show Visualization for {uploaded_file.name}"):
                 numeric_cols = df.select_dtypes(include=['number']).columns
@@ -149,7 +149,7 @@ if uploaded_files:
                 else:
                     st.warning("Not enough numeric columns for visualization.")
 
-            # File conversion options
+            # Step 7: File conversion options
             st.subheader("📂 Conversion Options")
             conversion_type = st.radio(f"Convert {uploaded_file.name} to", ['CSV', 'Excel'], key=uploaded_file.name)
 
@@ -161,13 +161,17 @@ if uploaded_files:
                     new_file_name = uploaded_file.name.replace(file_ext, '.csv')
                     mime_type = 'text/csv'
                 elif conversion_type == 'Excel':
-                    df.to_excel(buffer, index=False, engine='openpyxl')
-                    new_file_name = uploaded_file.name.replace(file_ext, '.xlsx')
-                    mime_type = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+                    try:
+                        df.to_excel(buffer, index=False, engine='openpyxl')
+                        new_file_name = uploaded_file.name.replace(file_ext, '.xlsx')
+                        mime_type = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+                    except ImportError:
+                        st.error("The 'openpyxl' library is required for Excel conversion. Please install it using `pip install openpyxl`.")
+                        continue
 
                 buffer.seek(0)
 
-                # Download button
+                # Step 8: Download button
                 st.download_button(
                     label=f"Download {new_file_name}",
                     data=buffer,
